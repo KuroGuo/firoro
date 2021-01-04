@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>飞熔币匿名钱包</title>
+    <link rel="stylesheet" href="base.css">
+    <style>
+      .app {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+      }
+      .app.overview .tab-overview,
+      .app.send .tab-send,
+      .app.receive .tab-receive,
+      .app.info .tab-info {
+        background-color: #282c34;
+        color: inherit;
+        box-shadow: 0 0 4px black;
+        z-index: 1;
+      }
+      .app.overview .view-overview,
+      .app.send .view-send,
+      .app.receive .view-receive,
+      .app.info .view-info {
+        display: flex;
+      }
+
+      .view {
+        display: none;
+      }
+      .view-overview > .region-balance {
+      }
+      .view-overview > .region-transactions {
+      }
+      .region-balance > .balance {
+        margin-top: .618em;
+        position: relative;
+      }
+      .balance > .button-receive {
+        position: absolute;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        margin: auto;
+      }
+      .view-overview .transaction {
+        margin-top: .618em;
+        line-height: 2;
+        display: flex;
+        flex-direction: column;
+      }
+      .transaction-type {
+        font-weight: bold;
+      }
+      .view-overview .transaction > .row {
+        display: flex;
+        justify-content: space-between;
+      }
+      .view-overview .transaction .changed {
+        text-align: right;
+      }
+      .view-overview .transaction .changed:after {
+        content: ' ZNC'
+      }
+      .view-overview .transaction .comment {
+        display: block;
+        overflow: hidden;
+        text-overflow:ellipsis;
+        white-space: nowrap;
+      }
+      .view-overview .total-balance {
+        margin-top: .618em;
+      }
+      .region-title {
+        font-weight: bold;
+        margin-bottom: 1em;
+      }
+
+      .address-content {
+        margin-bottom: 8px;
+        cursor: pointer;
+      }
+
+      .textboxbar-address {
+        position: relative;
+      }
+      .textboxbar-address > .textbox-address-lable {
+        position: absolute;
+        left: .618em;
+        padding: .618em 0;
+        color: #3d3939;
+        pointer-events: none;
+        box-shadow: 2px 0px 2px #eee;
+        font-family: consolas, Monaco, monospace;
+      }
+      .textbox-address {
+        padding-left: 6em;
+      }
+      .textboxbar-amount {
+        width: 38.2%;
+        position: relative;
+      }
+      .textbox-amount {
+        text-align: right;
+        padding-right: 3.618em;
+      }
+      .textboxbar-amount > .textbox-amount-lable {
+        position: absolute;
+        left: .618em;
+        padding: .618em 0;
+        color: #3d3939;
+        pointer-events: none;
+        box-shadow: 2px 0px 2px #eee;
+        font-family: consolas, Monaco, monospace;
+      }
+      .textboxbar-amount > .textbox-amount-unit {
+        position: absolute;
+        right: .618em;
+        top: .618em;
+        color: #3d3939;
+        font-family: consolas, Monaco, monospace;
+        pointer-events: none;
+      }
+      .region-send > * {
+        margin-bottom: 1em;
+      }
+      .syncing {
+        position: absolute;
+        left: .382em;
+        bottom: .382em;
+      }
+      .synced .syncing {
+        display: none;
+      }
+
+      .view-info .info {
+        margin-bottom: .618em;
+      }
+      .button-encrypt-wallet, .button-change-password {
+        display: none;
+      }
+      .firod-initialized.unencrypted .button-encrypt-wallet {
+        display: inline-block;
+      }
+      .firod-initialized.encrypted .button-change-password {
+        display: inline-block;
+      }
+    </style>
+    <!-- <script>
+      const address = require('electron').remote.getGlobal('app').address
+    </script> -->
+  </head>
+  <body>
+    <div id="app" class="app overview">
+      <div class="tab-bar">
+        <div class="tab tab-overview" onclick="switchView('overview')">概览</div>
+        <div class="tab tab-send" onclick="switchView('send')">发送</div>
+        <div class="tab tab-receive" onclick="switchView('receive')">接收</div>
+        <div class="tab tab-info" onclick="switchView('info')">信息</div>
+        <div class="toolbar">
+          <div class="button button-encrypt-wallet" onclick="showSetPasswordDialog()">加密钱包</div><!--
+          --><div class="button button-change-password" onclick="showSetPasswordDialog(true)">修改密码</div><!--
+          --><div class="button button-backup" onclick="backupwallet()">备份钱包</div>
+        </div>
+      </div>
+      <div id="view_overview" class="view view-overview">
+        <div class="region region-balance">
+          <div class="region-title">余额</div>
+          <div class="balance available-balance">
+            可用的：<span class="money"><span class="amount" id="balance_available">加载中...</span> FIRO</span>
+          </div>
+          <div class="balance pending-balance">
+            等待中：<span class="money"><span class="amount" id="balance_pending">加载中...</span> FIRO</span>
+          </div>
+          <div class="balance receive-balance">
+            待接收：<span class="money"><span class="amount" id="balance_receive">加载中...</span> FIRO</span>
+            <div class="button button-receive" onclick="backupwallet('backupwallet')">接收</div>
+          </div>
+        </div>
+        <div class="region region-transactions">
+          <!-- <div class="region-title">最近交易记录</div> -->
+          <!-- <div id="transactions_wrapper" class="transactions-wrapper">
+            <div class="transaction money">加载中...</div>
+          </div> -->
+        </div>
+      </div>
+      <div id="view_send" class="view view-send">
+        <form class="region region-send" id="form_send">
+          <div class="balance available-balance">
+            可用金额：<span class="money"><span class="amount" id="balance_available">0</span> FIRO</span>
+          </div>
+          <div class="textboxbar textboxbar-address">
+            <input id="textbox_address" class="textbox textbox-address" placeholder="请输入一个飞熔币地址（例如 aB5ggLWB9KV7pM8PyTRiY8Q5jY3ZuZ32Bc）" pattern="^[a-zA-HJ-NP-Z0-9]+$" required><span class="textbox-address-lable" id="textbox_address_lable">付给：</span>
+          </div>
+          <div class="textboxbar textboxbar-amount">
+            <input id="textbox_amount" class="textbox textbox-amount" placeholder="0.00000000" pattern="^\d+(\.\d{1,8})?$" required><span id="textbox_amount_lable" class="textbox-amount-lable">金额：</span><span id="textbox_amount_unit" class="textbox-amount-unit">&nbsp;FIRO</span>
+          </div>
+          <div class="button button-send" onclick="document.querySelector('#button_submit_send').click()">发送</div>
+          <input type="submit" id="button_submit_send" style="display: none;" />
+        </form>
+      </div>
+      <div id="view_receive" class="view view-receive">
+        <div class="region">
+          <div id="address_content" class="monospace address-content" onclick="copyAddress()">加载中...</div>
+          <div class="button button-copyaddress" onclick="copyAddress()">复制</div>
+        </div>
+      </div>
+      <div id="view_info" class="view view-info monospace">
+        <div class="region">
+          <div class="info">连接数：<span id="connections">加载中...</span></div>
+          <div class="info">当前区块高度：<span id="current_block_height">加载中...</span></div>
+          <div class="info">当前区块时间：<span id="current_block_datetime">加载中...</span></div>
+          <div class="info">已同步：<span id="is_synced">加载中...</span></div>
+        </div>
+      </div>
+      <div class="syncing"><span id="syncing_status">加载中</span> <span id="syncing_progress"></span></div>
+    </div>
+
+    <script>
+      let walletLocked, encryptedWallet
+
+      const appElement = document.querySelector('#app')
+      const syncing_status = document.querySelector('#syncing_status')
+      const textbox_address_lable = document.querySelector('#textbox_address_lable')
+      const textbox_address = document.querySelector('#textbox_address')
+      const textbox_amount = document.querySelector('#textbox_amount')
+      const textbox_amount_lable = document.querySelector('#textbox_amount_lable')
+      const textbox_amount_unit = document.querySelector('#textbox_amount_unit')
+
+      function switchView(name) {
+        app.classList.remove('overview')
+        app.classList.remove('send')
+        app.classList.remove('receive')
+        app.classList.remove('info')
+        app.classList.add(name)
+
+        if (name === 'send') {
+          let lableRight = textbox_address_lable.getBoundingClientRect().right
+          let textboxLeft = textbox_address.getBoundingClientRect().left
+          textbox_address.style.paddingLeft = `${lableRight - textboxLeft + 14 * 0.618}px`
+
+          let lableLeft = textbox_amount_unit.getBoundingClientRect().left
+          let textboxRight = textbox_amount.getBoundingClientRect().right
+          textbox_amount.style.paddingRight = `${textboxRight - lableLeft}px`
+          lableRight = textbox_amount_lable.getBoundingClientRect().right
+          textboxLeft = textbox_amount.getBoundingClientRect().left
+          textbox_amount.style.paddingLeft = `${lableRight - textboxLeft + 14 * 0.618}px`
+        }
+      }
+
+      function copyAddress() {
+        copy(document.querySelector('#address_content').innerText)
+        alert('已复制到剪切板')
+      }
+
+      function copy(content) {
+        const input = document.createElement('input')
+        input.value = content
+        input.style.position = 'absolute'
+        input.style.zIndex = -1
+        input.style.opacity = 0
+        input.style.left = 0
+        input.style.right = 0
+        document.body.append(input)
+        input.select()
+        document.execCommand("copy")
+        document.body.removeChild(input)
+      }
+
+      function updateBalanceDisplay({ receiveBalance, pendingBalance, availableBalance }) {
+        console.log('receiveBalance', receiveBalance)
+        const balance_available = document.querySelector('#balance_available')
+        balance_available.innerHTML = availableBalance.toFixed(8)
+        const balance_pending = document.querySelector('#balance_pending')
+        balance_pending.innerHTML = pendingBalance.toFixed(8)
+        const balance_receive = document.querySelector('#balance_receive')
+        balance_receive.innerHTML = receiveBalance.toFixed(8)
+      }
+
+      function updateTransactionsDisplay(transactions) {
+        const transactionsWrapperEl = document.querySelector('#transactions_wrapper')
+
+        transactionsWrapperEl.innerHTML = ''
+
+        transactions.slice(0, 4).forEach(transaction => {
+          const fromMe = transaction.from === address
+
+          const transactionEl = document.createElement('div')
+          transactionEl.classList.add('transaction')
+
+          const rowEl = document.createElement('row')
+          rowEl.classList.add('row')
+          transactionEl.appendChild(rowEl)
+
+          const commentEl = document.createElement('div')
+          commentEl.classList.add('row')
+          commentEl.classList.add('comment')
+          commentEl.innerHTML = transaction.comment
+          transactionEl.appendChild(commentEl)
+
+          const transactionTypeEl = document.createElement('div')
+          transactionTypeEl.classList.add('transaction-type')
+          transactionTypeEl.innerHTML = fromMe ? '转出' : '转入'
+          rowEl.appendChild(transactionTypeEl)
+
+          const changedEl = document.createElement('div')
+          changedEl.classList.add('changed')
+          changedEl.classList.add('money')
+          changedEl.innerHTML = `${fromMe ? '-' : '+'}${transaction.amount.toFixed(8)}`
+          rowEl.appendChild(changedEl)
+
+          transactionsWrapperEl.appendChild(transactionEl)
+        })
+      }
+
+      window.onStatusUpdated = (e, { walletLock, walletinitialized }) => {
+        walletLocked = walletLock
+        if (encryptedWallet === undefined && walletLock !== undefined) {
+          encryptedWallet = walletLocked
+          encryptedWallet ? appElement.classList.add('encrypted') :
+            appElement.classList.add('unencrypted')
+        }
+        if (!window.firodInitialized && walletinitialized) {
+          appElement.classList.add('firod-initialized')
+          window.firodInitialized = walletinitialized
+        }
+      }
+
+      window.onBalancesUpdated = (e, balances) => {
+        const availableBalance = balances.data.private.confirmed / 100000000
+        const pendingBalance = balances.data.private.unconfirmed / 100000000
+        const receiveBalance = balances.data.public.confirmed / 100000000
+
+        updateBalanceDisplay({ availableBalance, pendingBalance, receiveBalance })
+        // updateTransactionsDisplay(transactions)
+      }
+
+      window.onAddressUpdated = (e, address) => {
+        const address_content = document.querySelector('#address_content')
+        address_content.innerHTML = address
+      }
+
+      let initialTimeUntilSynced
+      window.onBlockchainUpdated = (e, {
+        status, currentBlock, timeUntilSynced, connections
+      }) => {
+        if (currentBlock.height < 1) return
+        if (!initialTimeUntilSynced) initialTimeUntilSynced = timeUntilSynced
+        const progress = (initialTimeUntilSynced - timeUntilSynced) / initialTimeUntilSynced
+        if (progress < 0) return
+
+        syncing_status.innerHTML = '同步中'
+        const syncing_progress = document.querySelector('#syncing_progress')
+        syncing_progress.innerHTML = `${(progress * 100).toFixed(2)}%`
+
+        const connectionsEl = document.querySelector('#connections')
+        const current_block_height =  document.querySelector('#current_block_height')
+        const current_block_datetime =  document.querySelector('#current_block_datetime')
+        const is_synced =  document.querySelector('#is_synced')
+        connectionsEl.innerHTML = connections
+        current_block_height.innerHTML = currentBlock.height
+        current_block_datetime.innerHTML = new Date(currentBlock.timestamp * 1000).toLocaleString()
+        is_synced.innerHTML = status.isSynced ? '是' : '否'
+
+        if (status.isSynced) appElement.classList.add('synced')
+      }
+
+      window.onRequestError = (e, err) => {
+        syncing_status.innerHTML = err.message
+      }
+
+      ;(function () {
+        const form_send = document.querySelector('#form_send')
+        form_send.addEventListener('submit', e => {
+          e.preventDefault()
+          showMessageBox()
+        })
+
+        const amountElements = document.querySelectorAll('.amount')
+        amountElements.forEach(ele => {
+          const handler = e => {
+            const amount = e.target.innerText
+            copy(amount)
+            alert('已复制到剪切板')
+          }
+          ele.addEventListener('click', handler)
+          ele.addEventListener('contextmenu', handler)
+        })
+      })()
+
+      ;(function() {
+        textbox_amount.addEventListener('change', e => {
+          const amount = Math.min(Number(e.target.value), 5001)
+          if (amount <= 0) return e.target.value = ''
+          e.target.value = amount.toFixed(8)
+        })
+      })()
+
+      // require('electron').ipcRenderer.on('initialdata-updated', (e, initialdata) => {
+      //   const { balances, transactions } = initialdata
+      //   const account = balances.find(item => item.address === address)
+      //   let balance = account ? account.balance : 0
+      //   transactions.forEach(tx => {
+      //     const fromMe = tx.from === address
+      //     fromMe ? (balance -= tx.amount) : (balance += tx.amount)
+      //   })
+      //   updateBalanceDisplay(balance)
+      //   updateTransactionsDisplay(transactions)
+      // })
+    </script>
+  </body>
+</html>

@@ -1,0 +1,131 @@
+html {
+  height: 100%;
+}
+body {
+  cursor: default;
+  height: 100%;
+  color: #eee;
+  background-color: #21252b;
+  margin: 0;
+  user-select: none;
+  display: flex;
+  flex-direction: column;
+}
+body, input {
+  font-size: 14px;
+  /* font-family:
+    SimHei,
+    "Microsoft YaHei",
+    "PingFang SC",
+    "Microsoft JhengHei",
+    "Lantinghei SC",
+    "Hiragino Sans GB",
+    "WenQuanYi Micro Hei",
+    sans-serif; */
+}
+
+.view {
+  box-shadow: 0 0 4px black;
+  flex: auto;
+  background-color: #282c34;
+  padding: 1em;
+  display: flex;
+  align-items: stretch;
+}
+.view > .region {
+  width: 0;
+  flex: 1;
+}
+.view > .region {
+  margin: 0 1em 0 0;
+}
+.view > .region:last-child {
+  margin: 0;
+}
+
+.tab-bar {
+  height: 30px;
+  overflow: hidden;
+  display: flex;
+  z-index: 1;
+  background-color: inherit;
+  padding: .618em 0 0 .618em;
+  position: relative;
+}
+.tab {
+  cursor: pointer;
+  height: 30px;
+  line-height: 30px;
+  text-align: center;
+  padding: 0 .618em;
+  min-width: 60px;
+  background-color: inherit;
+  box-shadow: 0 0 2px black;
+  color: #777;
+  margin-right: .382em;
+  border-top-left-radius: .382em;
+  border-top-right-radius: .382em;
+}
+.tab:hover {
+  color: #999;
+}
+
+.button {
+  display: inline-block;
+  cursor: pointer;
+  height: 28px;
+  line-height: 28px;
+  text-align: center;
+  padding: 0 10px;
+  min-width: 50px;
+  background-color: #363c46;
+  box-shadow: 0 0 2px black;
+  border-radius: 2px;
+  font-size: 12px;
+  z-index: 100;
+  color: #ccc;
+  border-radius: .382em;
+}
+.button:hover {
+  color: inherit;
+  background-color: #3b404d;
+}
+.button:hover:active {
+  opacity: .618;
+}
+.toolbar {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+}
+.toolbar > .button {
+  margin-right: .382em;
+}
+.money {
+  font-family: consolas, Monaco, monospace;
+  font-weight: bold;
+}
+.amount {
+  cursor: pointer;
+}
+.monospace {
+  font-family: consolas, Monaco, monospace;
+}
+
+.textbox {
+  padding: 0.618em 1em;
+  outline: none;
+  border: none;
+  width: 100%;
+  box-sizing: border-box;
+  font-family: consolas, Monaco, monospace;
+  color: #9b1c2e;
+}
+.textboxbar {
+  overflow: hidden;
+  border-radius: .382em;
+}

@@ -1,0 +1,37 @@
+{
+  "name": "Firoro",
+  "version": "0.0.1",
+  "description": "Firo mandatory anonymous wallet.",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "make": "electron-packager --overwrite --icon=icon.ico .",
+    "make-macos": "electron-packager --overwrite --icon=icon.icns --platform=darwin .",
+    "build": "node build.js",
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KuroGuo/firoro.git"
+  },
+  "keywords": [
+    "Cryptocurrency",
+    "Zencoin"
+  ],
+  "author": "Zenplan",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/KuroGuo/firoro/issues"
+  },
+  "homepage": "https://github.com/KuroGuo/firoro#readme",
+  "devDependencies": {
+    "electron": "^11.1.1",
+    "electron-packager": "^15.2.0"
+  },
+  "dependencies": {
+    "electron-context-menu": "^2.3.1",
+    "electron-prompt": "^1.6.0",
+    "electron-squirrel-startup": "^1.0.0",
+    "zeromq": "^6.0.0-beta.6"
+  }
+}
