@@ -10,6 +10,7 @@ body {
   user-select: none;
   display: flex;
   flex-direction: column;
+  line-height: 1;
 }
 body, input {
   font-size: 14px;
