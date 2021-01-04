@@ -87,6 +87,14 @@
         display: flex;
         align-items: center;
         height: 140px;
+        transition: all .1s;
+        user-select: none;
+      }
+      .download-logo-wrapper:active {
+        transform: rotate(90deg);
+      }
+      .download-logo-wrapper > * {
+        pointer-events: none;
       }
       .download-title {
         font-size: 2.618rem;
