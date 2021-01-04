@@ -80,8 +80,11 @@
         flex-direction: column;
         align-items: center;
       }
-      .download-logo {
+      .download-logo-wrapper {
         margin-bottom: 2.618em;
+        display: flex;
+        align-items: center;
+        height: 140px;
       }
       .download-title {
         font-size: 2.618rem;
@@ -167,7 +170,9 @@
     </header>
     <main>
       <div class="download">
-        <img class="download-logo" src="../logo2.svg" width="200" height="200" />
+        <div class="download-logo-wrapper">
+          <img src="../logo2.svg" width="200" height="200" />
+        </div>
         <h1 class="download-title">飞熔币强制匿名钱包</h1>
         <h2 class="download-subtitle">保持私密＆简单</h2>
         <ul class="download-list">
