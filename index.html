@@ -29,6 +29,9 @@
       .view {
         display: none;
       }
+      .view:not(.view-send) {
+        line-height: 1;
+      }
       .view-overview > .region-balance {
       }
       .view-overview > .region-transactions {
@@ -129,6 +132,7 @@
         position: absolute;
         left: .382em;
         bottom: .382em;
+        line-height: 1;
       }
       .synced .syncing {
         display: none;
@@ -187,7 +191,7 @@
       </div>
       <div id="view_send" class="view view-send">
         <form class="region region-send" id="form_send">
-          <div class="balance available-balance">
+          <div class="available-balance">
             可用金额：<span class="money"><span class="amount" id="balance_available">0</span> FIRO</span>
           </div>
           <div class="textboxbar textboxbar-address">
@@ -348,7 +352,7 @@
         if (currentBlock.height < 1) return
         if (!initialTimeUntilSynced) initialTimeUntilSynced = timeUntilSynced
         const progress = (initialTimeUntilSynced - timeUntilSynced) / initialTimeUntilSynced
-        if (progress < 0) return
+        if (progress < 0) progress = 0
 
         syncing_status.innerHTML = '同步中'
         const syncing_progress = document.querySelector('#syncing_progress')

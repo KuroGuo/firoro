@@ -10,11 +10,10 @@ body {
   user-select: none;
   display: flex;
   flex-direction: column;
-  line-height: 1;
 }
 body, input {
   font-size: 14px;
-  /* font-family:
+  font-family:
     SimHei,
     "Microsoft YaHei",
     "PingFang SC",
@@ -22,7 +21,7 @@ body, input {
     "Lantinghei SC",
     "Hiragino Sans GB",
     "WenQuanYi Micro Hei",
-    sans-serif; */
+    sans-serif;
 }
 
 .view {
@@ -52,6 +51,7 @@ body, input {
   background-color: inherit;
   padding: .618em 0 0 .618em;
   position: relative;
+  line-height: 1;
 }
 .tab {
   cursor: pointer;
@@ -114,7 +114,7 @@ body, input {
   cursor: pointer;
 }
 .monospace {
-  font-family: consolas, Monaco, monospace;
+  font-family: consolas, Monaco, SimHei, monospace;
 }
 
 .textbox {
