@@ -13,15 +13,7 @@ body {
 }
 body, input {
   font-size: 14px;
-  font-family:
-    SimHei,
-    "Microsoft YaHei",
-    "PingFang SC",
-    "Microsoft JhengHei",
-    "Lantinghei SC",
-    "Hiragino Sans GB",
-    "WenQuanYi Micro Hei",
-    sans-serif;
+  font-family: SimHei;
 }
 
 .view {
@@ -129,4 +121,8 @@ body, input {
 .textboxbar {
   overflow: hidden;
   border-radius: .382em;
+}
+
+.hide {
+  display: none;
 }

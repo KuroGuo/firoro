@@ -73,7 +73,7 @@
         white-space: nowrap;
       }
       .view-overview .total-balance {
-        margin-top: .618em;
+        margin-top: 1em;
       }
       .region-title {
         font-weight: bold;
@@ -171,15 +171,18 @@
       <div id="view_overview" class="view view-overview">
         <div class="region region-balance">
           <div class="region-title">余额</div>
-          <div class="balance available-balance">
-            可用的：<span class="money"><span class="amount" id="balance_available">加载中...</span> FIRO</span>
+          <div class="balance available-balance hide" id="available_balance_wrapper">
+            可用的：<span class="money"><span class="amount" id="available_balance">加载中...</span> FIRO</span>
           </div>
-          <div class="balance pending-balance">
-            等待中：<span class="money"><span class="amount" id="balance_pending">加载中...</span> FIRO</span>
+          <div class="balance pending-balance hide" id="pending_balance_wrapper">
+            等待中：<span class="money"><span class="amount" id="pending_balance">加载中...</span> FIRO</span>
           </div>
-          <div class="balance receive-balance">
-            待接收：<span class="money"><span class="amount" id="balance_receive">加载中...</span> FIRO</span>
+          <div class="balance receive-balance hide" id="receive_balance_wrapper">
+            待接收：<span class="money"><span class="amount" id="receive_balance">加载中...</span> FIRO</span>
             <div class="button button-receive" onclick="backupwallet('backupwallet')">接收</div>
+          </div>
+          <div class="balance total-balance">
+            总金额：<span class="money"><span class="amount" id="total_balance">加载中...</span> FIRO</span>
           </div>
         </div>
         <div class="region region-transactions">
@@ -192,7 +195,7 @@
       <div id="view_send" class="view view-send">
         <form class="region region-send" id="form_send">
           <div class="available-balance">
-            可用金额：<span class="money"><span class="amount" id="balance_available">0</span> FIRO</span>
+            可用金额：<span class="money"><span class="amount" id="available_balance">0</span> FIRO</span>
           </div>
           <div class="textboxbar textboxbar-address">
             <input id="textbox_address" class="textbox textbox-address" placeholder="请输入一个飞熔币地址（例如 aB5ggLWB9KV7pM8PyTRiY8Q5jY3ZuZ32Bc）" pattern="^[a-zA-HJ-NP-Z0-9]+$" required><span class="textbox-address-lable" id="textbox_address_lable">付给：</span>
@@ -231,6 +234,13 @@
       const textbox_amount = document.querySelector('#textbox_amount')
       const textbox_amount_lable = document.querySelector('#textbox_amount_lable')
       const textbox_amount_unit = document.querySelector('#textbox_amount_unit')
+      const available_balance_wrapper = document.querySelector('#available_balance_wrapper')
+      const pending_balance_wrapper = document.querySelector('#pending_balance_wrapper')
+      const receive_balance_wrapper = document.querySelector('#receive_balance_wrapper')
+      const available_balance = document.querySelector('#available_balance')
+      const pending_balance = document.querySelector('#pending_balance')
+      const receive_balance = document.querySelector('#receive_balance')
+      const total_balance = document.querySelector('#total_balance')
 
       function switchView(name) {
         app.classList.remove('overview')
@@ -272,14 +282,28 @@
         document.body.removeChild(input)
       }
 
-      function updateBalanceDisplay({ receiveBalance, pendingBalance, availableBalance }) {
+      function updateBalanceDisplay({ receiveBalance, pendingBalance, availableBalance, totalBalance }) {
         console.log('receiveBalance', receiveBalance)
-        const balance_available = document.querySelector('#balance_available')
-        balance_available.innerHTML = availableBalance.toFixed(8)
-        const balance_pending = document.querySelector('#balance_pending')
-        balance_pending.innerHTML = pendingBalance.toFixed(8)
-        const balance_receive = document.querySelector('#balance_receive')
-        balance_receive.innerHTML = receiveBalance.toFixed(8)
+        available_balance.innerHTML = availableBalance.toFixed(8)
+        pending_balance.innerHTML = pendingBalance.toFixed(8)
+        receive_balance.innerHTML = receiveBalance.toFixed(8)
+        total_balance.innerHTML = totalBalance.toFixed(8)
+
+        if (availableBalance === 0) {
+          available_balance_wrapper.classList.add('hide')
+        } else {
+          available_balance_wrapper.classList.remove('hide')
+        }
+        if (pendingBalance === 0) {
+          pending_balance_wrapper.classList.add('hide')
+        } else {
+          pending_balance_wrapper.classList.remove('hide')
+        }
+        if (receiveBalance === 0) {
+          receive_balance_wrapper.classList.add('hide')
+        } else {
+          receive_balance_wrapper.classList.remove('hide')
+        }
       }
 
       function updateTransactionsDisplay(transactions) {
@@ -335,8 +359,9 @@
         const availableBalance = balances.data.private.confirmed / 100000000
         const pendingBalance = balances.data.private.unconfirmed / 100000000
         const receiveBalance = balances.data.public.confirmed / 100000000
+        const totalBalance = availableBalance + pendingBalance + receiveBalance
 
-        updateBalanceDisplay({ availableBalance, pendingBalance, receiveBalance })
+        updateBalanceDisplay({ availableBalance, pendingBalance, receiveBalance, totalBalance })
         // updateTransactionsDisplay(transactions)
       }
 
@@ -351,7 +376,7 @@
       }) => {
         if (currentBlock.height < 1) return
         if (!initialTimeUntilSynced) initialTimeUntilSynced = timeUntilSynced
-        const progress = (initialTimeUntilSynced - timeUntilSynced) / initialTimeUntilSynced
+        let progress = (initialTimeUntilSynced - timeUntilSynced) / initialTimeUntilSynced
         if (progress < 0) progress = 0
 
         syncing_status.innerHTML = '同步中'
