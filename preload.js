@@ -34,22 +34,30 @@ ipcRenderer.on('addClassToBody', (e, className) => {
   window.document.body.classList.add(className)
 })
 
+ipcRenderer.on('setWindowData', (e, name, data) => {
+  window[name] = data
+})
+
 window.backupwallet = () => {
   ipcRenderer.send('backupwallet')
 }
 
-window.showMessageBox = async () => {
-  ipcRenderer.send('showMessageBox')
+window.sendcoins = async (address, amount, password) => {
+  if (window.walletLocked && !password) {
+    ipcRenderer.send('showSendcoinsPasswordDialog', address, amount)
+  } else {
+    ipcRenderer.send('sendcoins', address, amount, password)
+  }
 }
 
 window.showSetPasswordDialog = hasOld => {
   ipcRenderer.send('showSetPasswordDialog', hasOld)
 }
 
-window.closeSetpasswordDialog = () => {
-  ipcRenderer.send('closeSetpasswordDialog')
-}
-
 window.submitPassword = (oldpassword, newpassword) => {
-  ipcRenderer.send('submitPassword', oldpassword, newpassword)
+  if (window.dialogType = 'setPassword') {
+    ipcRenderer.send('submitSetPassword', oldpassword, newpassword)
+  } else if (window.dialogType = 'sendcoins') {
+    ipcRenderer.send('sendcoins', oldpassword, newpassword)
+  }
 }

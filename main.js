@@ -17,25 +17,26 @@ const statusSock = new zmq.Subscriber
 const requesterSocket = new zmq.Request
 const publisherSocket = new zmq.Subscriber
 
-const winDevFiroDataDir = 'e:\\firorodata'
+const winDevFiroDataDir = 'f:\\firoclient3'
 
 const firod = child_process.spawn(
   path.normalize('./assets/core/win/firod.exe'),
   [
     '-clientapi=1',
+    '-testnet',
     `-datadir=${winDevFiroDataDir}`
   ]
 )
 
-let mainWindow, setPasswordDialog
+let mainWindow, setPasswordDialog, sendcoinsPasswordDialog
 
 let blockchainInfo, keepUpdating
 
 init()
 
 async function init() {
-  const [clientPubkey, clientPrivkey] = await readCert(path.join(winDevFiroDataDir, "certificates", "client", "keys.json"))
-  const serverPubkey = (await readCert(path.join(winDevFiroDataDir, "certificates", "server", "keys.json")))[0]
+  const [clientPubkey, clientPrivkey] = await readCert(path.join(winDevFiroDataDir + '\\testnet3', "certificates", "client", "keys.json"))
+  const serverPubkey = (await readCert(path.join(winDevFiroDataDir + '\\testnet3', "certificates", "server", "keys.json")))[0]
 
   for (let s of [requesterSocket, publisherSocket]) {
     s.curveServerKey = serverPubkey
@@ -58,8 +59,8 @@ async function init() {
     }
   })()
 
-  requesterSocket.connect("tcp://127.0.0.1:15557")
-  console.log("requesterSocket connected to port 15557")
+  requesterSocket.connect("tcp://127.0.0.1:25557")
+  console.log("requesterSocket connected to port 25557")
 
   const poll = async () => {
     await update()
@@ -67,9 +68,9 @@ async function init() {
   }
   poll()
 
-  publisherSocket.connect("tcp://127.0.0.1:18332")
+  publisherSocket.connect("tcp://127.0.0.1:28332")
   publisherSocket.subscribe("rpc")
-  console.log("publisherSocket Subscriber connected to port 18332")
+  console.log("publisherSocket Subscriber connected to port 28332")
 
   for await (let [topic, msg] of publisherSocket) {
     console.log("received a message related to:", topic.toString(), "containing message:", msg.toString())
@@ -112,6 +113,7 @@ ipcMain.on('showMessageBox', () => {
 
 ipcMain.on('showSetPasswordDialog', (e, hasOld) => {
   setPasswordDialog = new BrowserWindow({
+    title: '设置密码',
     parent: mainWindow,
     width: 400,
     height: hasOld ? 225 : 177,
@@ -130,23 +132,22 @@ ipcMain.on('showSetPasswordDialog', (e, hasOld) => {
     backgroundColor: '#21252b'
   })
   setPasswordDialog.once('ready-to-show', () => {
-    if (hasOld) setPasswordDialog.webContents.send('addClassToBody', 'has-old')
+    setPasswordDialog.webContents.send('setWindowData', 'dialogType', 'setPassword')
+    if (!hasOld) {
+      setPasswordDialog.webContents.send('addClassToBody', 'hide-current')
+    }
     setPasswordDialog.show()
   })
   setPasswordDialog.setMenuBarVisibility(false)
   setPasswordDialog.loadURL(url.format({
-    pathname: path.join(__dirname, 'setpassword.html'),
+    pathname: path.join(__dirname, 'password.html'),
     protocol: 'file',
     slashes: true
   }))
 })
 
-ipcMain.on('closeSetpasswordDialog', () => {
-  setPasswordDialog.close()
-})
-
-ipcMain.on('submitPassword', async (e, oldpassword, newpassword) => {
-  console.log('submitPassword', oldpassword, newpassword)
+ipcMain.on('submitSetPassword', async (e, oldpassword, newpassword) => {
+  console.log('submitSetPassword', oldpassword, newpassword)
   await requesterSocket.send(JSON.stringify({
     auth: oldpassword ? {
       passphrase: oldpassword, newPassphrase: newpassword
@@ -158,7 +159,7 @@ ipcMain.on('submitPassword', async (e, oldpassword, newpassword) => {
     data: null
   }))
   const res = JSON.parse((await requesterSocket.receive())[0].toString())
-  console.log('submitPassword response: ', res)
+  console.log('submitSetPassword response: ', res)
   if (res.error && res.error.message) return dialog.showMessageBox({
     title: '错误', message: res.error.message, type: 'error'
   })
@@ -173,6 +174,75 @@ ipcMain.on('submitPassword', async (e, oldpassword, newpassword) => {
       message: '钱包加密成功。钱包现在要关闭，以完成加密过程。请注意，加密钱包不能完全防止入侵你的电脑的恶意程序偷取钱币。'
     })
   }
+})
+
+ipcMain.on('showSendcoinsPasswordDialog', (e, address, amount) => {
+  sendcoinsPasswordDialog = new BrowserWindow({
+    title: '输入密码',
+    parent: mainWindow,
+    width: 400,
+    height: 129,
+    minWidth: 400,
+    minHeight: 129,
+    icon: 'icon.ico',
+    webPreferences: {
+      preload: path.join(app.getAppPath(), 'preload.js'),
+      spellcheck: false
+    },
+    modal: true,
+    maximizable: false,
+    minimizable: false,
+    resizable: false,
+    show: false,
+    backgroundColor: '#21252b'
+  })
+  sendcoinsPasswordDialog.once('ready-to-show', () => {
+    sendcoinsPasswordDialog.webContents.send('addClassToBody', 'only-current')
+    sendcoinsPasswordDialog.webContents.send('setWindowData', 'dialogType', 'sendcoins')
+    sendcoinsPasswordDialog.webContents.send('setWindowData', 'address', address)
+    sendcoinsPasswordDialog.webContents.send('setWindowData', 'amount', amount)
+    sendcoinsPasswordDialog.show()
+  })
+  sendcoinsPasswordDialog.setMenuBarVisibility(false)
+  sendcoinsPasswordDialog.loadURL(url.format({
+    pathname: path.join(__dirname, 'password.html'),
+    protocol: 'file',
+    slashes: true
+  }))
+})
+
+ipcMain.on('sendcoins', async (e, address, amount, password) => {
+  console.log('sendcoins', address, amount, password, JSON.stringify({
+    auth: {
+      passphrase: password
+    },
+    type: 'create',
+    collection: 'sendLelantus',
+    data: {
+      recipient: address,
+      amount: amount * 100000000,
+      subtractFeeFromAmount: false
+    }
+  }))
+
+  await requesterSocket.send(JSON.stringify({
+    auth: {
+      passphrase: password
+    },
+    type: 'create',
+    collection: 'sendLelantus',
+    data: {
+      recipient: address,
+      amount: amount * 100000000,
+      subtractFeeFromAmount: false,
+      feePerKb: 0
+    }
+  }))
+  const res = JSON.parse((await requesterSocket.receive())[0].toString())
+  console.log('sendcoins response: ', res)
+  if (res.error && res.error.message) return dialog.showMessageBox({
+    title: '错误', message: res.error.message, type: 'error'
+  })
 })
 
 function createWindow () {
@@ -345,4 +415,16 @@ async function update() {
   blockchainInfo = JSON.parse((await requesterSocket.receive())[0].toString()).data
   console.log('blockchainInfo', blockchainInfo)
   mainWindow.webContents.send('blockchain-updated', blockchainInfo)
+
+  await requesterSocket.send(JSON.stringify({
+    auth: {
+      passphrase: null
+    },
+    type: 'get',
+    collection: 'stateWallet',
+    data: null
+  }))
+  stateWalletInfo = JSON.parse((await requesterSocket.receive())[0].toString()).data
+  console.log('stateWalletInfo', stateWalletInfo)
+  mainWindow.webContents.send('statewallet-updated', stateWalletInfo)
 }

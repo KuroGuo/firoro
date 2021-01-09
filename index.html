@@ -32,17 +32,21 @@
       .view:not(.view-send) {
         line-height: 1;
       }
-      .view-overview > .region-balance {
+      .balances-wrapper {
+        display: inline-block;
       }
-      .view-overview > .region-transactions {
-      }
-      .region-balance > .balance {
+      .region-balance .balance {
         margin-top: .618em;
         position: relative;
+        display: flex;
+        justify-content: space-between;
+      }
+      .region-balance .balance.hide {
+        display: none;
       }
       .balance > .button-receive {
         position: absolute;
-        right: 0;
+        right: -107px;
         top: 0;
         bottom: 0;
         margin: auto;
@@ -170,19 +174,21 @@
       </div>
       <div id="view_overview" class="view view-overview">
         <div class="region region-balance">
-          <div class="region-title">余额</div>
-          <div class="balance available-balance hide" id="available_balance_wrapper">
-            可用的：<span class="money"><span class="amount" id="available_balance">加载中...</span> FIRO</span>
-          </div>
-          <div class="balance pending-balance hide" id="pending_balance_wrapper">
-            等待中：<span class="money"><span class="amount" id="pending_balance">加载中...</span> FIRO</span>
-          </div>
-          <div class="balance receive-balance hide" id="receive_balance_wrapper">
-            待接收：<span class="money"><span class="amount" id="receive_balance">加载中...</span> FIRO</span>
-            <div class="button button-receive" onclick="backupwallet('backupwallet')">接收</div>
-          </div>
-          <div class="balance total-balance">
-            总金额：<span class="money"><span class="amount" id="total_balance">加载中...</span> FIRO</span>
+          <div class="balances-wrapper">
+            <div class="region-title">余额</div>
+            <div class="balance available-balance hide" id="available_balance_wrapper">
+              可用的：<span class="money"><span class="amount" id="available_balance">加载中...</span> FIRO</span>
+            </div>
+            <div class="balance pending-balance hide" id="pending_balance_wrapper">
+              等待中：<span class="money"><span class="amount" id="pending_balance">加载中...</span> FIRO</span>
+            </div>
+            <div class="balance receive-balance hide" id="receive_balance_wrapper">
+              待接收：<span class="money"><span class="amount" id="receive_balance">加载中...</span> FIRO</span>
+              <div class="button button-receive" onclick="backupwallet('backupwallet')">接收</div>
+            </div>
+            <div class="balance total-balance">
+              总金额：<span class="money"><span class="amount" id="total_balance">加载中...</span> FIRO</span>
+            </div>
           </div>
         </div>
         <div class="region region-transactions">
@@ -195,13 +201,13 @@
       <div id="view_send" class="view view-send">
         <form class="region region-send" id="form_send">
           <div class="available-balance">
-            可用金额：<span class="money"><span class="amount" id="available_balance">0</span> FIRO</span>
+            可用金额：<span class="money"><span class="amount" id="available_balance_sending">加载中...</span> FIRO</span>
           </div>
           <div class="textboxbar textboxbar-address">
-            <input id="textbox_address" class="textbox textbox-address" placeholder="请输入一个飞熔币地址（例如 aB5ggLWB9KV7pM8PyTRiY8Q5jY3ZuZ32Bc）" pattern="^[a-zA-HJ-NP-Z0-9]+$" required><span class="textbox-address-lable" id="textbox_address_lable">付给：</span>
+            <input name="address" id="textbox_address" class="textbox textbox-address" placeholder="请输入一个飞熔币地址（例如 aB5ggLWB9KV7pM8PyTRiY8Q5jY3ZuZ32Bc）" pattern="^[a-zA-HJ-NP-Z0-9]+$" required><span class="textbox-address-lable" id="textbox_address_lable">付给：</span>
           </div>
           <div class="textboxbar textboxbar-amount">
-            <input id="textbox_amount" class="textbox textbox-amount" placeholder="0.00000000" pattern="^\d+(\.\d{1,8})?$" required><span id="textbox_amount_lable" class="textbox-amount-lable">金额：</span><span id="textbox_amount_unit" class="textbox-amount-unit">&nbsp;FIRO</span>
+            <input name="amount" id="textbox_amount" class="textbox textbox-amount" placeholder="0.00000000" pattern="^\d+(\.\d{1,8})?$" required><span id="textbox_amount_lable" class="textbox-amount-lable">金额：</span><span id="textbox_amount_unit" class="textbox-amount-unit">&nbsp;FIRO</span>
           </div>
           <div class="button button-send" onclick="document.querySelector('#button_submit_send').click()">发送</div>
           <input type="submit" id="button_submit_send" style="display: none;" />
@@ -225,7 +231,7 @@
     </div>
 
     <script>
-      let walletLocked, encryptedWallet
+      let encryptedWallet
 
       const appElement = document.querySelector('#app')
       const syncing_status = document.querySelector('#syncing_status')
@@ -241,6 +247,7 @@
       const pending_balance = document.querySelector('#pending_balance')
       const receive_balance = document.querySelector('#receive_balance')
       const total_balance = document.querySelector('#total_balance')
+      const available_balance_sending = document.querySelector('#available_balance_sending')
 
       function switchView(name) {
         app.classList.remove('overview')
@@ -304,6 +311,8 @@
         } else {
           receive_balance_wrapper.classList.remove('hide')
         }
+
+        available_balance_sending.innerHTML = availableBalance.toFixed(8)
       }
 
       function updateTransactionsDisplay(transactions) {
@@ -343,9 +352,9 @@
       }
 
       window.onStatusUpdated = (e, { walletLock, walletinitialized }) => {
-        walletLocked = walletLock
+        window.walletLocked = walletLock
         if (encryptedWallet === undefined && walletLock !== undefined) {
-          encryptedWallet = walletLocked
+          encryptedWallet = window.walletLocked
           encryptedWallet ? appElement.classList.add('encrypted') :
             appElement.classList.add('unencrypted')
         }
@@ -403,7 +412,13 @@
         const form_send = document.querySelector('#form_send')
         form_send.addEventListener('submit', e => {
           e.preventDefault()
-          showMessageBox()
+
+          const form = e.target
+
+          const address = form.elements['address'].value
+          const amount = form.elements['amount'].value
+
+          sendcoins(address, amount)
         })
 
         const amountElements = document.querySelectorAll('.amount')
